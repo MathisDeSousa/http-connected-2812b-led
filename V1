@@ -1,0 +1,151 @@
+#include <FastLED.h>
+#define NUM_LEDS 114
+#define LED_PIN 2
+#define UPDATES_PER_SECOND 100
+CRGB leds[NUM_LEDS];
+uint8_t whichPalette = 0;
+uint8_t paletteIndex = 0;
+uint8_t BRIGHTNESS = 255;
+
+DEFINE_GRADIENT_PALETTE (red) {
+  0, 255,   0,   0,
+ 40, 255,   0,   0,
+128, 255, 255, 255,
+215, 255,   0,   0,
+255, 255,   0,   0,
+};
+ DEFINE_GRADIENT_PALETTE (white) {
+  0, 255, 185, 235,
+255, 255, 185, 235,
+};
+
+ DEFINE_GRADIENT_PALETTE (orange) {
+  0, 255,  55,   0,
+ 80,   0,   0,   0,
+156,   0,   0,   0,
+255, 255,  55,   0,
+};
+
+ DEFINE_GRADIENT_PALETTE (uv) {
+  0, 255,  64, 255,
+ 80,   0,   0,   0,
+156,   0,   0,   0,
+255, 255,  64, 255,
+};
+
+CRGBPalette16 currentPalette(red);
+CRGBPalette16 targetPalette(white);
+
+//_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+#include <ESP8266WiFi.h>
+
+const char* ssid = "Bbox-5FD3FD4C"; //WIFI Name, WeMo will only connect to a 2.4GHz network.
+const char* password = "L7VFn7NE33ttkCEcRk"; //WIFI Password
+
+WiFiServer server(80);
+IPAddress ip(192, 168, 1, 24); // where xx is the desired IP Address
+IPAddress gateway(10, 0, 0, 1); // set gateway to match your network
+IPAddress subnet(255, 255, 255, 0); // set subnet mask to match your network
+
+// void setup is where we initialize variables, pin modes, start using libraries, etc. 
+void setup() {
+
+  Serial.begin(115200);
+  delay(10);
+ 
+FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
+
+  WiFi.config(ip, gateway, subnet); 
+  WiFi.begin(ssid, password);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  server.begin();
+  Serial.print(WiFi.localIP());
+}
+
+void loop() {
+  // Check if a client has connected
+  WiFiClient client = server.available();
+
+   if (!client) {
+  FastLED.setBrightness(BRIGHTNESS);
+  nblendPaletteTowardPalette( currentPalette, targetPalette, 10 );
+  fill_palette(leds, NUM_LEDS, paletteIndex, 255 / NUM_LEDS, currentPalette, 255, LINEARBLEND);
+
+EVERY_N_MILLISECONDS(10){
+  paletteIndex++;
+}
+  
+FastLED.show();
+    return;
+  }
+  while(!client.available()){
+      FastLED.setBrightness(BRIGHTNESS);
+      nblendPaletteTowardPalette( currentPalette, targetPalette, 10 );
+  fill_palette(leds, NUM_LEDS, paletteIndex, 255 / NUM_LEDS, currentPalette, 255, LINEARBLEND);
+
+yield();
+EVERY_N_MILLISECONDS(10){
+  paletteIndex++;
+}
+
+   delay(10);
+FastLED.show();
+  }
+
+  // Read the first line of the request
+  String request = client.readStringUntil('\r');
+  client.flush();
+  
+  //Match the request, checking to see what the currect state is
+  //int value = LOW;
+  if (request.indexOf("/ON") != -1) {
+   BRIGHTNESS = 255;
+  } 
+  if (request.indexOf("/OFF") != -1){
+   BRIGHTNESS = 0;
+  } 
+  if (request.indexOf("/red") != -1){
+   BRIGHTNESS = 255;
+   whichPalette = 0;
+  } 
+  if (request.indexOf("/white") != -1){
+   BRIGHTNESS = 255;
+   whichPalette = 1;
+  } 
+  if (request.indexOf("/orange") != -1){
+   BRIGHTNESS = 255;
+   whichPalette = 2;
+  } 
+   if (request.indexOf("/uv") != -1){
+   BRIGHTNESS = 255;
+   whichPalette = 3;
+  } 
+    FastLED.setBrightness(BRIGHTNESS);
+  fill_palette(leds, NUM_LEDS, paletteIndex, 255 / NUM_LEDS, currentPalette, 255, LINEARBLEND);
+
+EVERY_N_MILLISECONDS(10){
+  paletteIndex++;
+}
+switch (whichPalette) {
+    case 0:
+      targetPalette = red;
+      break;
+    case 1:
+      targetPalette = white;
+      break;
+    case 2:
+      targetPalette = orange;
+     break;
+    case 3:
+      targetPalette = uv;
+     break;
+  }
+
+  nblendPaletteTowardPalette( currentPalette, targetPalette, 10 );
+FastLED.show();
+}//END

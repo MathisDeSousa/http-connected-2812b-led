@@ -39,8 +39,8 @@ CRGBPalette16 targetPalette(white);
 //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
 #include <ESP8266WiFi.h>
 
-const char* ssid = "Bbox-5FD3FD4C"; //WIFI Name, WeMo will only connect to a 2.4GHz network.
-const char* password = "L7VFn7NE33ttkCEcRk"; //WIFI Password
+const char* ssid = ""; //WIFI Name, WeMo will only connect to a 2.4GHz network.
+const char* password = ""; //WIFI Password
 
 WiFiServer server(80);
 IPAddress ip(192, 168, 1, 24); // where xx is the desired IP Address
